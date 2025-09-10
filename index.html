@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 
 <head>
   <meta charset="UTF-8">
@@ -7,8 +7,12 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="shortcut icon" href="./img/webcare.png" type="image/x-icon">
   <title>WebCare.idn - Form Absensi</title>
+
+  <!-- Font -->
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
     rel="stylesheet">
+
+  <!-- Custom Style -->
   <style>
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
@@ -28,48 +32,51 @@
   </style>
 </head>
 
-<body class="min-h-screen flex flex-col text-gray-800 px-4 md:px-0  ">
+<body class="min-h-screen min-w-screen flex flex-col bg-gray-100">
 
   <!-- Navbar -->
-  <!-- <nav class="bg-white shadow px-4 py-2 flex justify-between items-center">
+  <nav class="w-full bg-white shadow px-4 py-2 flex justify-between items-center">
+    <!-- Kiri: Logo -->
     <div class="flex items-center">
       <img src="./img/webcare.png" alt="WebCareID Logo" class="w-10 h-10 mr-2">
-      <span class="font-bold text-lg">WebCare.idn</span>
+      <!-- <span class="font-bold text-lg">WebCare.idn</span> -->
     </div>
-  </nav> -->
+
+    <!-- Kanan: Jam & Tanggal -->
+    <div class="text-right">
+      <span id="dateToday" class="block text-sm font-medium text-gray-600"></span>
+      <span id="clock" class="block text-lg font-bold text-gray-800"></span>
+    </div>
+  </nav>
+
 
   <!-- Card Absensi -->
-  <div class="flex flex-1 items-center justify-center px-4">
-    <div class="bg-white rounded-2xl shadow-lg w-full max-w-sm p-6">
+  <!-- Card Absensi -->
+  <div class="flex flex-1 items-center justify-center px-4 w-full">
+    <div class="bg-white rounded-2xl shadow-lg w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl p-6">
 
       <!-- Header Form -->
-      <div>
-        <h2 class="text-lg font-semibold text-gray-700 border-b border-gray-300 pb-2 mb-6">
-          Form Absensi
-        </h2>
-      </div>
-
+      <h2 class="text-lg font-semibold text-gray-700 border-b border-gray-300 pb-2 mb-6">
+        Form Absensi
+      </h2>
 
       <!-- Form -->
-      <form id="absensiForm" class="space-y-4">
+      <form id="absensiForm" class="space-y-4 w-full">
 
         <!-- Input Nama -->
         <div class="space-y-1">
-          <label for="name" class="block text-sm font-medium text-gray-700">
-            Nama
-          </label>
+          <label for="name" class="block text-sm font-medium text-gray-700">Nama</label>
           <input type="text" id="name" name="name" placeholder="Nama Anda"
             class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-black focus:outline-none"
             required>
         </div>
 
-
-        <!-- Hidden field -->
+        <!-- Hidden Field -->
         <input type="hidden" id="location" name="location" required>
         <input type="hidden" id="time" name="time">
 
         <!-- Tombol -->
-        <div class="space-y-2">
+        <div class="space-y-2 w-full">
           <button type="submit" id="submitBtn"
             class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition disabled:opacity-50">
             Submit Absensi
@@ -83,13 +90,14 @@
 
   <!-- Popup Overlay -->
   <div id="popupOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+
     <!-- Popup Box -->
     <div id="popupBox"
       class="bg-white rounded-2xl shadow-lg p-8 w-80 text-center transform transition duration-300 scale-95">
+
       <!-- Loading -->
       <div id="loadingState" class="flex flex-col items-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4">
-        </div>
+        <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
         <p class="text-gray-600 font-medium">Mohon Bersabar...</p>
       </div>
 
@@ -106,31 +114,49 @@
     </div>
   </div>
 
+  <!-- Script -->
   <script>
+    // Update jam & tanggal real-time
+    function updateDateTime() {
+      const now = new Date();
+
+      // Format tanggal
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('dateToday').textContent = now.toLocaleDateString('id-ID', options);
+
+      // Format jam
+      const time = now.toLocaleTimeString('id-ID', {
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+      document.getElementById('clock').textContent = time;
+    }
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
+
+    // Form Absensi
     const scriptURL = "https://script.google.com/macros/s/AKfycbw_vgfVVoWPvdCyS3Ixuvlw9CtSCR30VzL6AYWm-WBWcEGkPxWtnZ7xtanxizyk2cj9Sw/exec";
     const form = document.getElementById("absensiForm");
     const submitBtn = document.getElementById("submitBtn");
     const infoJam = document.getElementById("infoJam");
 
-    // Ambil lokasi otomatis
+    // Ambil lokasi otomatis & validasi jam
     window.onload = function () {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function (position) {
           const lat = position.coords.latitude;
           const lon = position.coords.longitude;
-          document.getElementById("location").value = lat + ", " + lon;
+          document.getElementById("location").value = `${lat}, ${lon}`;
         }, function (error) {
           alert("Gagal mendapatkan lokasi: " + error.message);
         });
       }
 
-      // Cek jam & menit saat ini
       const now = new Date();
       const jam = now.getHours();
       const menit = now.getMinutes();
 
       const mulaiJam = 8, mulaiMenit = 30; // 08:30
-      const akhirJam = 19, akhirMenit = 0;  // 09:00
+      const akhirJam = 9, akhirMenit = 0;  // 09:00
 
       const mulai = mulaiJam * 60 + mulaiMenit;
       const akhir = akhirJam * 60 + akhirMenit;
@@ -145,7 +171,7 @@
       }
     };
 
-    // Popup control
+    // Popup Control
     function showLoadingPopup() {
       document.getElementById("popupOverlay").classList.remove("hidden");
       document.getElementById("loadingState").classList.remove("hidden");
@@ -163,7 +189,7 @@
       document.getElementById("popupOverlay").classList.add("hidden");
     }
 
-    // Submit tanpa redirect
+    // Submit Form tanpa redirect
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       document.getElementById("time").value = new Date().toLocaleString();
@@ -175,7 +201,7 @@
 
       fetch(scriptURL, { method: "POST", body: formData })
         .then(() => {
-          setTimeout(showSuccessPopup, 1000); // delay biar smooth
+          setTimeout(showSuccessPopup, 1000);
           form.reset();
           submitBtn.textContent = "Sudah Absen";
           submitBtn.classList.add("bg-green-500");
@@ -187,6 +213,7 @@
         });
     });
   </script>
+
 </body>
 
 </html>

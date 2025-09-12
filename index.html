@@ -63,7 +63,7 @@
       <h3 class="text-md font-semibold text-gray-700 border-b border-gray-300 pb-2 mb-4">History Presensi</h3>
 
       <!-- Tabel Scroll Horizontal -->
-      <div class="overflow-x-auto">
+      <div id="tableWrapper" class="overflow-x-auto">
         <table class="w-full min-w-max text-sm border border-gray-300 rounded-lg">
           <thead class="bg-green-100 text-gray-700">
             <tr>
@@ -110,8 +110,6 @@
       </form>
     </div>
 
-    <!-- Card History -->
-
   </div>
 
   <!-- Script -->
@@ -140,12 +138,12 @@
     // Data absensi
     let absensiHistory = JSON.parse(localStorage.getItem("absensiHistory") || "[]");
 
-    // Dummy data (kalau kosong)
+    // Dummy data
     if (absensiHistory.length === 0) {
       const dummyData = [];
       const dummyNames = ["Masuk", "Keluar"];
       const now = new Date();
-      for (let i = 1; i <= 10; i++) {
+      for (let i = 1; i <= 15; i++) {
         const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
         const time = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:00`;
         const type = dummyNames[i % 2];
@@ -160,6 +158,8 @@
     const prevPageBtn = document.getElementById("prevPage");
     const nextPageBtn = document.getElementById("nextPage");
     const pageInfo = document.getElementById("pageInfo");
+    const tableWrapper = document.getElementById("tableWrapper");
+
     let currentPage = 1;
     const itemsPerPage = 5;
 
@@ -170,9 +170,7 @@
         historyPerDay[item.date][item.type] = item.time;
       });
 
-      // urutkan tanggal terbaru dulu
       const days = Object.keys(historyPerDay).sort((a, b) => new Date(b) - new Date(a));
-
       const start = (page - 1) * itemsPerPage;
       const end = start + itemsPerPage;
       const pagedDays = days.slice(start, end);
@@ -181,13 +179,12 @@
       pagedDays.forEach(date => {
         const masuk = historyPerDay[date].Masuk || "-";
         const keluar = historyPerDay[date].Keluar || "-";
-
         const row = `
-      <tr>
-        <td class="px-3 py-2">${date}</td>
-        <td class="px-3 py-2">${masuk}</td>
-        <td class="px-3 py-2">${keluar}</td>
-      </tr>`;
+        <tr>
+          <td class="px-3 py-2">${date}</td>
+          <td class="px-3 py-2">${masuk}</td>
+          <td class="px-3 py-2">${keluar}</td>
+        </tr>`;
         historyTable.insertAdjacentHTML("beforeend", row);
       });
 
@@ -196,7 +193,6 @@
       prevPageBtn.disabled = currentPage === 1;
       nextPageBtn.disabled = currentPage === totalPages;
     }
-
 
     prevPageBtn.addEventListener("click", () => {
       if (currentPage > 1) currentPage--;
@@ -207,6 +203,27 @@
       const totalPages = Math.ceil(absensiHistory.length / itemsPerPage);
       if (currentPage < totalPages) currentPage++;
       renderHistory(currentPage);
+    });
+
+    // Auto next/prev page saat scroll horizontal tabel
+    tableWrapper.addEventListener("scroll", function () {
+      const { scrollLeft, scrollWidth, clientWidth } = tableWrapper;
+      if (scrollLeft + clientWidth >= scrollWidth - 5) {
+        // Scroll kanan habis → next page
+        const totalPages = Math.ceil(absensiHistory.length / itemsPerPage);
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderHistory(currentPage);
+          tableWrapper.scrollLeft = 0;
+        }
+      } else if (scrollLeft <= 0) {
+        // Scroll kiri habis → prev page
+        if (currentPage > 1) {
+          currentPage--;
+          renderHistory(currentPage);
+          tableWrapper.scrollLeft = tableWrapper.scrollWidth;
+        }
+      }
     });
 
     renderHistory(currentPage);
@@ -226,8 +243,8 @@
       const now = new Date();
       const jam = now.getHours();
       const menit = now.getMinutes();
-      const mulai = 8 * 60 + 30; // 08:30
-      const akhir = 9 * 60;      // 09:00
+      const mulai = 8 * 60 + 30;
+      const akhir = 9 * 60;
       const sekarang = jam * 60 + menit;
 
       if (sekarang < mulai || sekarang >= akhir) {
@@ -241,7 +258,6 @@
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
-
       const now = new Date();
       const date = now.toLocaleDateString('id-ID');
       const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });

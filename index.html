@@ -57,32 +57,49 @@
     </div>
   </nav>
 
-  <!-- Card Absensi -->
-  <div class="flex flex-1 items-center justify-center px-4 mt-6">
-    <div class="bg-white rounded-2xl shadow-lg w-full max-w-xl p-6">
+  <div class="flex flex-col items-center justify-start px-4 mt-6 space-y-6 w-full">
 
-      <!-- Header Form -->
-      <h2 class="text-lg font-semibold text-gray-700 border-b border-gray-300 pb-2 mb-4">
-        Form Absensi
-      </h2>
+    <div class="bg-white rounded-2xl shadow-lg w-full max-w-3xl p-6">
+      <h3 class="text-md font-semibold text-gray-700 border-b border-gray-300 pb-2 mb-4">History Presensi</h3>
 
-      <!-- Form -->
+      <!-- Tabel Scroll Horizontal -->
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-max text-sm border border-gray-300 rounded-lg">
+          <thead class="bg-green-100 text-gray-700">
+            <tr>
+              <th class="px-3 py-2 text-left">Tanggal</th>
+              <th class="px-3 py-2 text-left">Jam Masuk</th>
+              <th class="px-3 py-2 text-left">Jam Keluar</th>
+            </tr>
+          </thead>
+          <tbody id="historyTable" class="divide-y divide-gray-200 text-gray-600">
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex justify-center items-center mt-3 space-x-2">
+        <button id="prevPage" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Prev</button>
+        <span id="pageInfo" class="text-sm font-medium"></span>
+        <button id="nextPage" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Next</button>
+      </div>
+    </div>
+
+    <!-- Card Absensi -->
+    <div class="bg-white rounded-2xl shadow-lg w-full max-w-3xl p-6">
+      <h2 class="text-lg font-semibold text-gray-700 border-b border-gray-300 pb-2 mb-4">Form Absensi</h2>
+
       <form id="absensiForm" class="space-y-4 w-full">
-
-        <!-- Nama (auto dari login) -->
         <div class="space-y-1">
           <label for="name" class="block text-sm font-medium text-gray-700">Nama</label>
           <input type="text" id="name" name="name" placeholder="Nama Anda" readonly
-            class="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-100 focus:outline-none"
-            required>
+            class="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-100 focus:outline-none" required>
         </div>
 
-        <!-- Hidden Fields -->
         <input type="hidden" id="location" name="location" required>
         <input type="hidden" id="time" name="time">
-        <input type="hidden" id="type" name="type"> <!-- masuk / keluar -->
+        <input type="hidden" id="type" name="type">
 
-        <!-- Tombol -->
         <div class="space-y-2 w-full">
           <button type="submit" id="submitBtn"
             class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition">
@@ -91,21 +108,16 @@
           <p id="infoJam" class="text-sm text-center text-gray-500"></p>
         </div>
       </form>
-
-      <!-- History Absensi -->
-      <div class="mt-6">
-        <h3 class="text-md font-semibold text-gray-700 border-b border-gray-300 pb-1 mb-2">History Absensi</h3>
-        <ul id="historyList" class="space-y-1 max-h-60 overflow-y-auto">
-          <!-- Data akan ditambahkan via JS -->
-        </ul>
-      </div>
     </div>
+
+    <!-- Card History -->
+
   </div>
 
   <!-- Script -->
   <script>
     // Nama user login
-    const userName = "Admin"; // Bisa diganti ambil dari localStorage
+    const userName = "Admin";
     document.getElementById("userName").textContent = userName;
     document.getElementById("name").value = userName;
 
@@ -125,40 +137,97 @@
     setInterval(updateDateTime, 1000);
     updateDateTime();
 
-    // History Absensi
-    const historyList = document.getElementById("historyList");
+    // Data absensi
     let absensiHistory = JSON.parse(localStorage.getItem("absensiHistory") || "[]");
 
-    function renderHistory() {
-      historyList.innerHTML = "";
-      absensiHistory.slice().reverse().forEach(item => {
-        const li = document.createElement("li");
-        li.className = "px-3 py-1 border rounded-lg text-sm bg-gray-50";
-        li.textContent = `${item.date} - ${item.time} (${item.type})`;
-        historyList.appendChild(li);
-      });
+    // Dummy data (kalau kosong)
+    if (absensiHistory.length === 0) {
+      const dummyData = [];
+      const dummyNames = ["Masuk", "Keluar"];
+      const now = new Date();
+      for (let i = 1; i <= 10; i++) {
+        const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+        const time = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:00`;
+        const type = dummyNames[i % 2];
+        dummyData.push({ date: date.toLocaleDateString('id-ID'), time, type });
+      }
+      absensiHistory = dummyData;
+      localStorage.setItem("absensiHistory", JSON.stringify(absensiHistory));
     }
-    renderHistory();
 
-    // Absensi Form
+    // ===== Pagination & Render =====
+    const historyTable = document.getElementById("historyTable");
+    const prevPageBtn = document.getElementById("prevPage");
+    const nextPageBtn = document.getElementById("nextPage");
+    const pageInfo = document.getElementById("pageInfo");
+    let currentPage = 1;
+    const itemsPerPage = 5;
+
+    function renderHistory(page = 1) {
+      const historyPerDay = {};
+      absensiHistory.forEach(item => {
+        if (!historyPerDay[item.date]) historyPerDay[item.date] = {};
+        historyPerDay[item.date][item.type] = item.time;
+      });
+
+      // urutkan tanggal terbaru dulu
+      const days = Object.keys(historyPerDay).sort((a, b) => new Date(b) - new Date(a));
+
+      const start = (page - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      const pagedDays = days.slice(start, end);
+
+      historyTable.innerHTML = "";
+      pagedDays.forEach(date => {
+        const masuk = historyPerDay[date].Masuk || "-";
+        const keluar = historyPerDay[date].Keluar || "-";
+
+        const row = `
+      <tr>
+        <td class="px-3 py-2">${date}</td>
+        <td class="px-3 py-2">${masuk}</td>
+        <td class="px-3 py-2">${keluar}</td>
+      </tr>`;
+        historyTable.insertAdjacentHTML("beforeend", row);
+      });
+
+      const totalPages = Math.ceil(days.length / itemsPerPage);
+      pageInfo.textContent = `Halaman ${currentPage} / ${totalPages}`;
+      prevPageBtn.disabled = currentPage === 1;
+      nextPageBtn.disabled = currentPage === totalPages;
+    }
+
+
+    prevPageBtn.addEventListener("click", () => {
+      if (currentPage > 1) currentPage--;
+      renderHistory(currentPage);
+    });
+
+    nextPageBtn.addEventListener("click", () => {
+      const totalPages = Math.ceil(absensiHistory.length / itemsPerPage);
+      if (currentPage < totalPages) currentPage++;
+      renderHistory(currentPage);
+    });
+
+    renderHistory(currentPage);
+
+    // ===== Absensi Form =====
     const form = document.getElementById("absensiForm");
     const submitBtn = document.getElementById("submitBtn");
     const infoJam = document.getElementById("infoJam");
 
     window.onload = function () {
-      // Lokasi
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function (position) {
           document.getElementById("location").value = `${position.coords.latitude}, ${position.coords.longitude}`;
         });
       }
 
-      // Validasi jam absensi
       const now = new Date();
       const jam = now.getHours();
       const menit = now.getMinutes();
       const mulai = 8 * 60 + 30; // 08:30
-      const akhir = 9 * 60 + 0;  // 09:00
+      const akhir = 9 * 60;      // 09:00
       const sekarang = jam * 60 + menit;
 
       if (sekarang < mulai || sekarang >= akhir) {
@@ -170,7 +239,6 @@
       }
     };
 
-    // Submit Absensi
     form.addEventListener("submit", function (e) {
       e.preventDefault();
 
@@ -178,22 +246,18 @@
       const date = now.toLocaleDateString('id-ID');
       const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-      // Tentukan tipe absen
       let type = "Masuk";
       if (absensiHistory.length > 0 && absensiHistory[absensiHistory.length - 1].type === "Masuk") {
         type = "Keluar";
       }
-      document.getElementById("type").value = type;
-      document.getElementById("time").value = now.toLocaleString();
 
-      // Simpan ke localStorage (history)
       absensiHistory.push({ date, time, type });
       localStorage.setItem("absensiHistory", JSON.stringify(absensiHistory));
-      renderHistory();
 
-      // Update tombol
+      currentPage = 1;
+      renderHistory(currentPage);
+
       submitBtn.textContent = type === "Masuk" ? "Absen Keluar" : "Sudah Keluar";
-      submitBtn.disabled = false;
     });
   </script>
 

@@ -160,8 +160,9 @@
 
     <!-- Script Login -->
     <script>
-        document.getElementById("loginForm").addEventListener("submit", function (e) {
+        document.getElementById("loginForm").addEventListener("submit", async function (e) {
             e.preventDefault();
+
             const email = document.getElementById("email").value;
             const password = document.getElementById("password").value;
             const loginBtn = document.getElementById("loginBtn");
@@ -169,18 +170,41 @@
             loginBtn.textContent = "Loading...";
             loginBtn.disabled = true;
 
-            setTimeout(() => {
-                if (email === "admin@webcare.com" && password === "123456") {
+            try {
+                // Panggil API Laravel login
+                const res = await fetch("http://localhost:8000/api/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    // Simpan token & user di localStorage
+                    localStorage.setItem("token", data.token);
+                    localStorage.setItem("user", JSON.stringify(data.user));
                     localStorage.setItem("isLoggedIn", "true");
+
+                    // Redirect ke dashboard/index.html
                     window.location.href = "index.html";
                 } else {
-                    alert("Email / password salah!");
+                    alert(data.message || "Login gagal");
                     loginBtn.textContent = "Sign In";
                     loginBtn.disabled = false;
                 }
-            }, 1000);
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Terjadi kesalahan koneksi!");
+                loginBtn.textContent = "Sign In";
+                loginBtn.disabled = false;
+            }
         });
     </script>
+
 
 </body>
 

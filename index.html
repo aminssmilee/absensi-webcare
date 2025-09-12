@@ -12,16 +12,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
     rel="stylesheet">
 
-  <!-- Custom Style -->
   <style>
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
-      height: 100vh;
+      min-height: 100vh;
       margin: 0;
       display: flex;
-      justify-content: center;
-      align-items: center;
-
+      flex-direction: column;
       background: radial-gradient(circle at top left,
           #ffffff 0%,
           #e6e6ff 20%,
@@ -32,133 +29,136 @@
   </style>
 </head>
 
-<body class="min-h-screen min-w-screen flex flex-col bg-gray-100">
+<body class="min-h-screen flex flex-col">
+
+  <!-- Proteksi halaman -->
+  <script>
+    if (!localStorage.getItem("isLoggedIn")) {
+      window.location.href = "login.html";
+    }
+  </script>
 
   <!-- Navbar -->
-  <nav class="w-full bg-white shadow px-4 flex justify-between items-center">
-    <!-- Kiri: Logo -->
+  <nav class="w-full bg-white shadow px-4 py-2 flex justify-between items-center">
     <div class="flex items-center">
-      <img src="./img/webcare.png" alt="WebCareID Logo" class="w-20 h-20 mr-2">
-      <!-- <span class="font-bold text-lg">WebCare.idn</span> -->
+      <img src="./img/webcare.png" alt="WebCareID Logo" class="w-16 h-16 mr-2">
+      <div>
+        <p class="text-sm font-semibold">Hai, <span id="userName">Admin</span></p>
+        <span id="dateToday" class="text-xs text-gray-600"></span>
+      </div>
     </div>
 
-    <!-- Kanan: Jam & Tanggal -->
-    <div class="text-right">
-      <span id="dateToday" class="block text-xs font-medium text-gray-600"></span>
-      <span id="clock" class="block text-xs font-bold text-gray-800"></span>
+    <div class="flex items-center space-x-4">
+      <span id="clock" class="text-sm font-bold text-gray-800"></span>
+      <button onclick="logout()"
+        class="bg-red-500 hover:bg-red-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+        Logout
+      </button>
     </div>
   </nav>
 
-
   <!-- Card Absensi -->
-  <div class="flex flex-1 -mt-24 items-center justify-center px-4 w-full">
-    <div class="bg-white rounded-2xl shadow-lg w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl p-6">
+  <div class="flex flex-1 items-center justify-center px-4 mt-6">
+    <div class="bg-white rounded-2xl shadow-lg w-full max-w-xl p-6">
 
       <!-- Header Form -->
-      <h2 class="text-lg font-semibold text-gray-700 border-b border-gray-300 pb-2 mb-6">
+      <h2 class="text-lg font-semibold text-gray-700 border-b border-gray-300 pb-2 mb-4">
         Form Absensi
       </h2>
 
       <!-- Form -->
       <form id="absensiForm" class="space-y-4 w-full">
 
-        <!-- Input Nama -->
+        <!-- Nama (auto dari login) -->
         <div class="space-y-1">
           <label for="name" class="block text-sm font-medium text-gray-700">Nama</label>
-          <input type="text" id="name" name="name" placeholder="Nama Anda"
-            class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-black focus:outline-none"
+          <input type="text" id="name" name="name" placeholder="Nama Anda" readonly
+            class="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-100 focus:outline-none"
             required>
         </div>
 
-        <!-- Hidden Field -->
+        <!-- Hidden Fields -->
         <input type="hidden" id="location" name="location" required>
         <input type="hidden" id="time" name="time">
+        <input type="hidden" id="type" name="type"> <!-- masuk / keluar -->
 
         <!-- Tombol -->
         <div class="space-y-2 w-full">
           <button type="submit" id="submitBtn"
-            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition disabled:opacity-50">
-            Submit Absensi
+            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition">
+            Absen Masuk
           </button>
           <p id="infoJam" class="text-sm text-center text-gray-500"></p>
         </div>
       </form>
-    </div>
-  </div>
 
-
-  <!-- Popup Overlay -->
-  <div id="popupOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-
-    <!-- Popup Box -->
-    <div id="popupBox"
-      class="bg-white rounded-2xl shadow-lg p-8 w-80 text-center transform transition duration-300 scale-95">
-
-      <!-- Loading -->
-      <div id="loadingState" class="flex flex-col items-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
-        <p class="text-gray-600 font-medium">Mohon Bersabar...</p>
-      </div>
-
-      <!-- Success -->
-      <div id="successState" class="hidden flex flex-col items-center">
-        <div class="text-green-500 text-5xl mb-3">✓</div>
-        <h2 class="text-lg font-semibold text-gray-800 mb-2">Absensi Berhasil</h2>
-        <p class="text-gray-600 text-sm mb-4">Data absensi kamu sudah tercatat.</p>
-        <button onclick="closePopup()"
-          class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition">
-          Oke
-        </button>
+      <!-- History Absensi -->
+      <div class="mt-6">
+        <h3 class="text-md font-semibold text-gray-700 border-b border-gray-300 pb-1 mb-2">History Absensi</h3>
+        <ul id="historyList" class="space-y-1 max-h-60 overflow-y-auto">
+          <!-- Data akan ditambahkan via JS -->
+        </ul>
       </div>
     </div>
   </div>
 
   <!-- Script -->
   <script>
-    // Update jam & tanggal real-time
+    // Nama user login
+    const userName = "Admin"; // Bisa diganti ambil dari localStorage
+    document.getElementById("userName").textContent = userName;
+    document.getElementById("name").value = userName;
+
+    // Logout
+    function logout() {
+      localStorage.removeItem("isLoggedIn");
+      window.location.href = "login.html";
+    }
+
+    // Jam & Tanggal real-time
     function updateDateTime() {
       const now = new Date();
-
-      // Format tanggal
       const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
       document.getElementById('dateToday').textContent = now.toLocaleDateString('id-ID', options);
-
-      // Format jam
-      const time = now.toLocaleTimeString('id-ID', {
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-      });
-      document.getElementById('clock').textContent = time;
+      document.getElementById('clock').textContent = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }
     setInterval(updateDateTime, 1000);
     updateDateTime();
 
-    // Form Absensi
-    const scriptURL = "https://script.google.com/macros/s/AKfycbw_vgfVVoWPvdCyS3Ixuvlw9CtSCR30VzL6AYWm-WBWcEGkPxWtnZ7xtanxizyk2cj9Sw/exec";
+    // History Absensi
+    const historyList = document.getElementById("historyList");
+    let absensiHistory = JSON.parse(localStorage.getItem("absensiHistory") || "[]");
+
+    function renderHistory() {
+      historyList.innerHTML = "";
+      absensiHistory.slice().reverse().forEach(item => {
+        const li = document.createElement("li");
+        li.className = "px-3 py-1 border rounded-lg text-sm bg-gray-50";
+        li.textContent = `${item.date} - ${item.time} (${item.type})`;
+        historyList.appendChild(li);
+      });
+    }
+    renderHistory();
+
+    // Absensi Form
     const form = document.getElementById("absensiForm");
     const submitBtn = document.getElementById("submitBtn");
     const infoJam = document.getElementById("infoJam");
 
-    // Ambil lokasi otomatis & validasi jam
     window.onload = function () {
+      // Lokasi
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function (position) {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          document.getElementById("location").value = `${lat}, ${lon}`;
-        }, function (error) {
-          alert("Gagal mendapatkan lokasi: " + error.message);
+          document.getElementById("location").value = `${position.coords.latitude}, ${position.coords.longitude}`;
         });
       }
 
+      // Validasi jam absensi
       const now = new Date();
       const jam = now.getHours();
       const menit = now.getMinutes();
-
-      const mulaiJam = 8, mulaiMenit = 30; // 08:30
-      const akhirJam = 19, akhirMenit = 0;  // 09:00
-
-      const mulai = mulaiJam * 60 + mulaiMenit;
-      const akhir = akhirJam * 60 + akhirMenit;
+      const mulai = 8 * 60 + 30; // 08:30
+      const akhir = 9 * 60 + 0;  // 09:00
       const sekarang = jam * 60 + menit;
 
       if (sekarang < mulai || sekarang >= akhir) {
@@ -170,46 +170,30 @@
       }
     };
 
-    // Popup Control
-    function showLoadingPopup() {
-      document.getElementById("popupOverlay").classList.remove("hidden");
-      document.getElementById("loadingState").classList.remove("hidden");
-      document.getElementById("successState").classList.add("hidden");
-    }
-
-    function showSuccessPopup() {
-      document.getElementById("loadingState").classList.add("hidden");
-      document.getElementById("successState").classList.remove("hidden");
-      document.getElementById("popupBox").classList.remove("scale-95");
-      document.getElementById("popupBox").classList.add("scale-100");
-    }
-
-    function closePopup() {
-      document.getElementById("popupOverlay").classList.add("hidden");
-    }
-
-    // Submit Form tanpa redirect
+    // Submit Absensi
     form.addEventListener("submit", function (e) {
       e.preventDefault();
-      document.getElementById("time").value = new Date().toLocaleString();
 
-      const formData = new FormData(form);
+      const now = new Date();
+      const date = now.toLocaleDateString('id-ID');
+      const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-      // tampilkan loading popup
-      showLoadingPopup();
+      // Tentukan tipe absen
+      let type = "Masuk";
+      if (absensiHistory.length > 0 && absensiHistory[absensiHistory.length - 1].type === "Masuk") {
+        type = "Keluar";
+      }
+      document.getElementById("type").value = type;
+      document.getElementById("time").value = now.toLocaleString();
 
-      fetch(scriptURL, { method: "POST", body: formData })
-        .then(() => {
-          setTimeout(showSuccessPopup, 1000);
-          form.reset();
-          submitBtn.textContent = "Sudah Absen";
-          submitBtn.classList.add("bg-green-500");
-          submitBtn.disabled = true;
-        })
-        .catch(error => {
-          alert("Gagal submit: " + error.message);
-          closePopup();
-        });
+      // Simpan ke localStorage (history)
+      absensiHistory.push({ date, time, type });
+      localStorage.setItem("absensiHistory", JSON.stringify(absensiHistory));
+      renderHistory();
+
+      // Update tombol
+      submitBtn.textContent = type === "Masuk" ? "Absen Keluar" : "Sudah Keluar";
+      submitBtn.disabled = false;
     });
   </script>
 

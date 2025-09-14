@@ -103,14 +103,16 @@
     const API_URL = "http://localhost:8000/api"; // ganti sesuai URL Laravel kamu
     let token = localStorage.getItem("token");
 
-    // 🔒 Proteksi halaman: cek token sekali
+    // 🔒 Proteksi halaman
     document.addEventListener("DOMContentLoaded", () => {
       token = localStorage.getItem("token");
       if (!token) {
-        window.location.href = "login.html"; // redirect sekali
+        window.location.href = "login.html";
       } else {
         getUser();
         loadHistory();
+        updateDateTime(); // ambil jam server pertama kali
+        setInterval(updateDateTime, 1000); // refresh tiap detik
       }
     });
 
@@ -120,47 +122,46 @@
         const res = await fetch(`${API_URL}/user`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-
         if (!res.ok) throw new Error("Token tidak valid");
 
         const user = await res.json();
         document.getElementById("userName").textContent = user.name;
         document.getElementById("name").value = user.name;
-
       } catch (err) {
         console.error(err);
-        logout(); // token invalid → logout aman
+        logout();
       }
     }
 
     // 🚪 Logout
     function logout() {
       localStorage.removeItem("token");
-      window.location.href = "login.html"; // redirect sekali
+      window.location.href = "login.html";
     }
 
-    // ⏰ Jam & tanggal realtime
-    // ⏰ Jam & tanggal real-time akurat
-    function updateDateTime() {
-      const now = new Date();
+    // ⏰ Ambil jam & tanggal dari server (backend)
+    async function updateDateTime() {
+      try {
+        const res = await fetch(`${API_URL}/time`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error("Gagal ambil waktu server");
 
-      // Tanggal panjang bahasa Indonesia
-      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      document.getElementById('dateToday').textContent = now.toLocaleDateString('id-ID', options);
+        const data = await res.json();
 
-      // Jam real-time (2 digit selalu)
-      const jam = String(now.getHours()).padStart(2, '0');
-      const menit = String(now.getMinutes()).padStart(2, '0');
-      const detik = String(now.getSeconds()).padStart(2, '0');
-      document.getElementById('clock').textContent = `${jam}:${menit}:${detik}`;
+        // tampilkan jam & tanggal
+        document.getElementById('clock').textContent = data.time;
+        document.getElementById('dateToday').textContent =
+          new Date(data.datetime).toLocaleDateString('id-ID', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+          });
+
+        // simpan ke input hidden
+        document.getElementById('time').value = data.time;
+      } catch (err) {
+        console.error(err);
+      }
     }
-
-    // Update setiap detik
-    setInterval(updateDateTime, 1000);
-    updateDateTime();
-
-    setInterval(updateDateTime, 1000);
-    updateDateTime();
 
     // 📜 Riwayat absensi
     let absensiHistory = [];
@@ -231,8 +232,8 @@
       const totalMenit = jam * 60 + menit;
 
       const masukMulai = 8 * 60 + 30;  // 08:30
-      const masukAkhir = 18 * 60;       // 18:00
-      const keluarMulai = 17 * 60;     // 16:00
+      const masukAkhir = 18 * 60;      // 18:00
+      const keluarMulai = 1 * 60;     // 17:00
       const keluarAkhir = 23 * 60;     // 23:00
 
       let type = "Masuk";
@@ -258,7 +259,7 @@
         } else {
           submitBtn.disabled = true;
           submitBtn.textContent = "Absen Keluar";
-          infoJam.textContent = "Hanya bisa jam 16:00 - 23:00";
+          infoJam.textContent = "Hanya bisa jam 17:00 - 23:00";
         }
       }
     }
@@ -269,8 +270,8 @@
     // Submit form
     form.addEventListener("submit", async function (e) {
       e.preventDefault();
-      const date = new Date().toISOString().split("T")[0]; // tanggal tetap ambil saat submit
-      const time = document.getElementById('time').value;  // ambil jam realtime dari hidden input
+      const date = new Date().toISOString().split("T")[0];
+      const time = document.getElementById('time').value;
 
       let type = "Masuk";
       if (absensiHistory.length > 0 && !absensiHistory[0].jam_keluar) {
@@ -305,19 +306,6 @@
         alert("Browser tidak mendukung GPS!");
       }
     });
-
-    function updateDateTime() {
-      const now = new Date();
-      const jam = String(now.getHours()).padStart(2, '0');
-      const menit = String(now.getMinutes()).padStart(2, '0');
-      const detik = String(now.getSeconds()).padStart(2, '0');
-      document.getElementById('clock').textContent = `${jam}:${menit}:${detik}`;
-
-      // update hidden input time
-      document.getElementById('time').value = `${jam}:${menit}:${detik}`;
-    }
-    setInterval(updateDateTime, 1000);
-    updateDateTime();
   </script>
 </body>
 

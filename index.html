@@ -90,7 +90,7 @@
   <div id="loginPage" class="hidden flex items-center justify-center min-h-screen w-full">
     <div class="bg-white rounded-2xl shadow-lg w-full max-w-md mx-4">
       <div class="flex flex-col items-center p-6">
-        <img src="./img/webcare.png" alt="WebCare Logo" class="w-16 h-16 mb-2">
+        <img src="./img/webcare.png" alt="WebCare Logo" class="h-20 mb-2">
         <h2 class="text-xl font-bold text-gray-800 mb-1">Login ke WebCare</h2>
         <p class="text-sm text-gray-500 mb-4 text-center">Masukkan akun Anda</p>
 
@@ -127,15 +127,15 @@
     <!-- Navbar -->
     <nav class="w-full sticky top-0 z-50 bg-white shadow px-4 py-2 flex justify-between items-center">
       <div class="flex items-center">
-        <img src="./img/webcare.png" alt="WebCareID Logo" class="w-16 h-16 mr-2">
+        <img src="./img/webcare.png" alt="WebCareID Logo" class="h-16 mr-2">
         <div>
-          <p class="text-sm font-semibold">Hai, <span id="userName">Admin</span></p>
-          <span id="dateToday" class="text-xs text-gray-600"></span>
+          <p class="text-sm font-semibold hidden">Hai, <span id="userName">Admin</span></p>
+          <span id="dateToday" class="text-xs text-gray-600 hidden"></span>
         </div>
       </div>
 
       <div class="flex items-center space-x-4">
-        <span id="clock" class="text-sm font-bold text-gray-800"></span>
+        <span id="clock" class="text-sm hidden font-bold text-gray-800"></span>
         <button onclick="logout()"
           class="bg-red-500 hover:bg-red-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
           Logout
@@ -143,14 +143,61 @@
       </div>
     </nav>
 
-    <div class="flex flex-col items-center justify-start px-4 mt-6 space-y-6 w-full">
+    <!-- Jam dan tgl -->
+    <div class="flex justify-between gap-6 w-full mx-auto mt-2 mb-2 max-w-[800px] p-4">
+      <!-- Jam -->
+      <div class="w-1/2 bg-white rounded-2xl shadow-lg p-4 text-center">
+        <p id="jam" class="text-3xl font-bold text-gray-800"></p>
+      </div>
+
+      <!-- Tanggal -->
+      <div class="w-1/2 bg-white rounded-2xl shadow-lg p-4 text-center">
+        <p id="hari" class="text-base font-semibold text-gray-800"></p>
+        <p id="tanggal" class="text-sm font-medium text-gray-600"></p>
+      </div>
+    </div>
+
+    <div class="flex flex-col items-center justify-start space-y-6 w-full md:mb-6 mb-4 mx-auto flex-1 px-4">
+
+      <!-- Form Absensi -->
+      <div class="bg-white rounded-2xl shadow-lg w-full max-w-3xl p-6 text-center">
+        <!-- Sapa user -->
+        <div class="flex items-center justify-start space-x-3 mb-4">
+          <!-- Avatar PNG -->
+          <img src="./img/user.png" alt="Avatar" class="w-12 h-12 rounded-full object-cover shadow-md">
+
+          <!-- Nama User -->
+          <h2 class="text-xl font-semibold text-gray-800">
+            Hai, <span id="namaUser"></span>
+          </h2>
+        </div>
+
+
+        <!-- Hidden input -->
+        <input type="hidden" id="time" name="time">
+        <input type="hidden" id="type" name="type">
+
+        <!-- Tombol Absensi -->
+        <div class="space-y-2 w-full">
+          <form id="absensiForm">
+            <button type="submit" id="submitBtn"
+              class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition">
+              Absen Masuk
+            </button>
+          </form>
+          <p id="infoJam" class="text-sm text-center text-gray-500"></p>
+        </div>
+      </div>
 
       <!-- History Presensi -->
       <div class="bg-white rounded-2xl shadow-lg w-full max-w-3xl p-6">
-        <h3 class="text-md font-semibold text-gray-700 border-b border-gray-300 pb-2 mb-4">History Presensi</h3>
+        <h3 class="text-md font-semibold text-black bg-blue-500 px-4 py-2 rounded-t-lg">
+          History Presensi
+        </h3>
+
         <div id="tableWrapper" class="overflow-x-auto">
           <table class="w-full min-w-max text-sm border border-gray-300 rounded-lg">
-            <thead class="bg-green-100 text-gray-700">
+            <thead class="bg-gray-100 text-gray-700">
               <tr>
                 <th class="px-3 py-2 text-left">Tanggal</th>
                 <th class="px-3 py-2 text-left">Jam Masuk</th>
@@ -170,26 +217,6 @@
         </div>
       </div>
 
-      <!-- Form Absensi -->
-      <div class="bg-transparent rounded-2xl shadow-lg w-full max-w-3xl p-6">
-        <form id="absensiForm" class="space-y-4 w-full">
-          <div class="space-y-1">
-            <input type="text" id="name" name="name" placeholder="Nama Anda" readonly
-              class="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-100 focus:outline-none" required>
-          </div>
-
-          <input type="hidden" id="time" name="time">
-          <input type="hidden" id="type" name="type">
-
-          <div class="space-y-2 w-full">
-            <button type="submit" id="submitBtn"
-              class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition">
-              Absen Masuk
-            </button>
-            <p id="infoJam" class="text-sm text-center text-gray-500"></p>
-          </div>
-        </form>
-      </div>
     </div>
   </div>
 
@@ -201,13 +228,8 @@
     let currentPage = 1;
     const itemsPerPage = 5;
 
-    // Tentukan halaman awal
     document.addEventListener("DOMContentLoaded", () => {
-      if (token) {
-        showDashboard();
-      } else {
-        showLogin();
-      }
+      if (token) showDashboard(); else showLogin();
     });
 
     function showLogin() {
@@ -220,12 +242,11 @@
       document.getElementById("dashboardPage").classList.remove("hidden");
       getUser();
       loadHistory();
-      updateDateTime();
-      setInterval(updateDateTime, 1000);
+      setInterval(updateDateTimeLocal, 1000);
       setInterval(checkAbsensiRules, 1000);
     }
 
-    // ============== LOGIN ==============
+    // LOGIN
     document.getElementById("loginForm").addEventListener("submit", async function (e) {
       e.preventDefault();
       const email = document.getElementById("email").value;
@@ -250,7 +271,7 @@
         } else {
           alert(data.message || "Login gagal");
         }
-      } catch (err) {
+      } catch {
         alert("Terjadi kesalahan koneksi!");
       }
 
@@ -258,7 +279,7 @@
       loginBtn.disabled = false;
     });
 
-    // ============== LOGOUT ==============
+    // LOGOUT
     function logout() {
       localStorage.removeItem("token");
       document.body.style.opacity = "0";
@@ -268,7 +289,7 @@
       }, 300);
     }
 
-    // ============== USER ==============
+    // USER
     async function getUser() {
       try {
         const res = await fetch(`${API_URL}/user`, {
@@ -278,32 +299,30 @@
 
         const user = await res.json();
         document.getElementById("userName").textContent = user.name;
-        document.getElementById("name").value = user.name;
-      } catch (err) {
+        document.getElementById("namaUser").textContent = user.name; // fix bagian sapaan
+      } catch {
         logout();
       }
     }
 
-    // ============== WAKTU ==============
-    async function updateDateTime() {
-      try {
-        const res = await fetch(`${API_URL}/time`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-        });
-        if (!res.ok) throw new Error();
+    // JAM (Local)
+    function updateDateTimeLocal() {
+      const now = new Date();
+      const tanggal = now.toLocaleDateString("id-ID", {
+        weekday: "long", year: "numeric", month: "long", day: "numeric"
+      });
+      const jam = now.toLocaleTimeString("id-ID", {
+        hour: "2-digit", minute: "2-digit", second: "2-digit"
+      });
 
-        const data = await res.json();
-        document.getElementById('clock').textContent = data.time;
-        document.getElementById('dateToday').textContent =
-          new Date(data.datetime).toLocaleDateString('id-ID', {
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-          });
-
-        document.getElementById('time').value = data.time;
-      } catch { }
+      document.getElementById("tanggal").textContent = tanggal;
+      document.getElementById("jam").textContent = jam;
+      document.getElementById("clock").textContent = jam;
+      document.getElementById("dateToday").textContent = tanggal;
+      document.getElementById("time").value = jam;
     }
 
-    // ============== HISTORY ==============
+    // HISTORY
     async function loadHistory() {
       try {
         const res = await fetch(`${API_URL}/absensi/history`, {
@@ -351,7 +370,7 @@
       renderHistory(currentPage);
     });
 
-    // ============== ABSENSI ==============
+    // ABSENSI
     const form = document.getElementById("absensiForm");
     const submitBtn = document.getElementById("submitBtn");
     const infoJam = document.getElementById("infoJam");
@@ -364,13 +383,14 @@
 
       const masukMulai = 7 * 60 + 30; // 07:30
       const masukAkhir = 20 * 60;     // 18:00
-      const keluarMulai = 17 * 60;    // 17:00
+      const keluarMulai = 11 * 60;    // 17:00
       const keluarAkhir = 23 * 60;    // 23:00
 
       let type = "Masuk";
       if (absensiHistory.length > 0 && !absensiHistory[0].jam_keluar) type = "Keluar";
 
       if (type === "Masuk") {
+        submitBtn.className = "w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition";
         if (totalMenit >= masukMulai && totalMenit <= masukAkhir) {
           submitBtn.disabled = false;
           submitBtn.textContent = "Absen Masuk";
@@ -378,9 +398,10 @@
         } else {
           submitBtn.disabled = true;
           submitBtn.textContent = "Absen Masuk";
-          infoJam.textContent = "Hanya bisa jam 07:30 - 18:00";
+          infoJam.textContent = "Hanya bisa jam 08:30 - 09:00";
         }
       } else {
+        submitBtn.className = "w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-lg transition";
         if (totalMenit >= keluarMulai && totalMenit <= keluarAkhir) {
           submitBtn.disabled = false;
           submitBtn.textContent = "Absen Keluar";
@@ -430,6 +451,46 @@
         alert("❌ Browser tidak mendukung GPS!");
       }
     });
+
+    // JAM (Local)
+    function updateDateTimeLocal() {
+      const now = new Date();
+
+      // Ambil hari
+      const hari = now.toLocaleDateString("id-ID", { weekday: "long" });
+
+      // Ambil tanggal lengkap (tanpa hari)
+      const tanggal = now.toLocaleDateString("id-ID", {
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+
+      // Jam digital
+      const jam = now.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+
+      // Update ke HTML
+      document.getElementById("hari").textContent = hari;
+      document.getElementById("tanggal").textContent = tanggal;
+      document.getElementById("jam").textContent = jam;
+
+      // Kalau kamu masih pakai ini untuk navbar/header
+      document.getElementById("clock").textContent = jam;
+      document.getElementById("dateToday").textContent = `${hari}, ${tanggal}`;
+
+      // Hidden input untuk form
+      document.getElementById("time").value = jam;
+    }
+
+    // Update setiap detik
+    setInterval(updateDateTimeLocal, 1000);
+    updateDateTimeLocal();
+
   </script>
 </body>
+
 </html>

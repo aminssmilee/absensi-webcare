@@ -81,6 +81,70 @@
     .button-submit:hover {
       background-color: #252727;
     }
+
+    /* Overlay penuh layar */
+    .popup-loader {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .popup-loader.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Kotak loading */
+    .popup-box {
+      background: white;
+      padding: 20px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      animation: scaleIn 0.3s ease;
+    }
+
+    @keyframes scaleIn {
+      0% {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* Spinner */
+    .popup-spinner {
+      border: 4px solid #e5e7eb;
+      border-top: 4px solid #2563eb;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
   </style>
 </head>
 
@@ -123,8 +187,6 @@
 
   <!-- ================= DASHBOARD ================= -->
   <div id="dashboardPage" class="hidden flex flex-col flex-1">
-
-    <!-- Navbar -->
     <nav class="w-full sticky top-0 z-50 bg-white shadow px-4 py-2 flex justify-between items-center">
       <div class="flex items-center">
         <img src="./img/webcare.png" alt="WebCareID Logo" class="h-16 mr-2">
@@ -143,14 +205,11 @@
       </div>
     </nav>
 
-    <!-- Jam dan tgl -->
+    <!-- Jam & tanggal -->
     <div class="flex justify-between gap-6 w-full mx-auto mt-2 mb-2 max-w-[800px] p-4">
-      <!-- Jam -->
       <div class="w-1/2 bg-white rounded-2xl shadow-lg p-4 text-center">
         <p id="jam" class="text-3xl font-bold text-gray-800"></p>
       </div>
-
-      <!-- Tanggal -->
       <div class="w-1/2 bg-white rounded-2xl shadow-lg p-4 text-center">
         <p id="hari" class="text-base font-semibold text-gray-800"></p>
         <p id="tanggal" class="text-sm font-medium text-gray-600"></p>
@@ -158,31 +217,24 @@
     </div>
 
     <div class="flex flex-col items-center justify-start space-y-6 w-full md:mb-6 mb-4 mx-auto flex-1 px-4">
-
       <!-- Form Absensi -->
       <div class="bg-white rounded-2xl shadow-lg w-full max-w-3xl p-6 text-center">
-        <!-- Sapa user -->
         <div class="flex items-center justify-start space-x-3 mb-4">
-          <!-- Avatar PNG -->
           <img src="./img/user.png" alt="Avatar" class="w-12 h-12 rounded-full object-cover shadow-md">
-
-          <!-- Nama User -->
           <h2 class="text-xl font-semibold text-gray-800">
             Hai, <span id="namaUser"></span>
           </h2>
         </div>
 
-
-        <!-- Hidden input -->
         <input type="hidden" id="time" name="time">
         <input type="hidden" id="type" name="type">
 
-        <!-- Tombol Absensi -->
         <div class="space-y-2 w-full">
           <form id="absensiForm">
             <button type="submit" id="submitBtn"
-              class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition">
-              Absen Masuk
+              class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition flex items-center justify-center space-x-2">
+              <img id="btnIcon" src="./img/checkin.png" alt="Icon" class="w-5 h-5">
+              <span id="btnText">Absen Masuk</span>
             </button>
           </form>
           <p id="infoJam" class="text-sm text-center text-gray-500"></p>
@@ -191,10 +243,9 @@
 
       <!-- History Presensi -->
       <div class="bg-white rounded-2xl shadow-lg w-full max-w-3xl p-6">
-        <h3 class="text-md font-semibold text-black bg-blue-500 px-4 py-2 rounded-t-lg">
+        <h3 class="text-md font-semibold text-white bg-blue-500 px-4 py-2 rounded-t-lg">
           History Presensi
         </h3>
-
         <div id="tableWrapper" class="overflow-x-auto">
           <table class="w-full min-w-max text-sm border border-gray-300 rounded-lg">
             <thead class="bg-gray-100 text-gray-700">
@@ -216,7 +267,14 @@
           <button id="nextPage" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Next</button>
         </div>
       </div>
+    </div>
+  </div>
 
+  <!-- POPUP LOADER -->
+  <div id="popupLoader" class="popup-loader">
+    <div class="popup-box">
+      <div class="popup-spinner"></div>
+      <p class="text-gray-700 font-medium" id="popupText">Loading...</p>
     </div>
   </div>
 
@@ -228,8 +286,21 @@
     let currentPage = 1;
     const itemsPerPage = 5;
 
+    const popupLoader = document.getElementById("popupLoader");
+    const popupText = document.getElementById("popupText");
+
+    // Fungsi show / hide loader
+    function showLoader(msg = "Loading...") {
+      popupText.textContent = msg;
+      popupLoader.classList.add("active");
+    }
+    function hideLoader() {
+      popupLoader.classList.remove("active");
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       if (token) showDashboard(); else showLogin();
+      hideLoader();
     });
 
     function showLogin() {
@@ -251,10 +322,8 @@
       e.preventDefault();
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
-      const loginBtn = document.getElementById("loginBtn");
 
-      loginBtn.textContent = "Loading...";
-      loginBtn.disabled = true;
+      showLoader("Memproses login...");
 
       try {
         const res = await fetch(`${API_URL}/login`, {
@@ -274,9 +343,7 @@
       } catch {
         alert("Terjadi kesalahan koneksi!");
       }
-
-      loginBtn.textContent = "Sign In";
-      loginBtn.disabled = false;
+      hideLoader();
     });
 
     // LOGOUT
@@ -296,30 +363,12 @@
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
         });
         if (!res.ok) throw new Error("Token tidak valid");
-
         const user = await res.json();
         document.getElementById("userName").textContent = user.name;
-        document.getElementById("namaUser").textContent = user.name; // fix bagian sapaan
+        document.getElementById("namaUser").textContent = user.name;
       } catch {
         logout();
       }
-    }
-
-    // JAM (Local)
-    function updateDateTimeLocal() {
-      const now = new Date();
-      const tanggal = now.toLocaleDateString("id-ID", {
-        weekday: "long", year: "numeric", month: "long", day: "numeric"
-      });
-      const jam = now.toLocaleTimeString("id-ID", {
-        hour: "2-digit", minute: "2-digit", second: "2-digit"
-      });
-
-      document.getElementById("tanggal").textContent = tanggal;
-      document.getElementById("jam").textContent = jam;
-      document.getElementById("clock").textContent = jam;
-      document.getElementById("dateToday").textContent = tanggal;
-      document.getElementById("time").value = jam;
     }
 
     // HISTORY
@@ -329,7 +378,6 @@
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
         });
         if (!res.ok) throw new Error();
-
         absensiHistory = await res.json();
         renderHistory(currentPage);
       } catch { }
@@ -381,35 +429,39 @@
       const menit = now.getMinutes();
       const totalMenit = jam * 60 + menit;
 
-      const masukMulai = 7 * 60 + 30; // 07:30
-      const masukAkhir = 20 * 60;     // 18:00
-      const keluarMulai = 11 * 60;    // 17:00
-      const keluarAkhir = 23 * 60;    // 23:00
+      const masukMulai = 8 * 60 + 30;
+      const masukAkhir = 9 * 60;
+      const keluarMulai = 16 * 60;
+      const keluarAkhir = 17 * 60;
 
       let type = "Masuk";
       if (absensiHistory.length > 0 && !absensiHistory[0].jam_keluar) type = "Keluar";
 
       if (type === "Masuk") {
-        submitBtn.className = "w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition";
+        submitBtn.className =
+          "w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition flex items-center justify-center space-x-2";
+
         if (totalMenit >= masukMulai && totalMenit <= masukAkhir) {
           submitBtn.disabled = false;
-          submitBtn.textContent = "Absen Masuk";
+          document.getElementById("btnText").textContent = "Absen Masuk";
+          document.getElementById("btnIcon").src = "./img/checkin.png";
           infoJam.textContent = "Absensi Masuk dibuka";
         } else {
           submitBtn.disabled = true;
-          submitBtn.textContent = "Absen Masuk";
           infoJam.textContent = "Hanya bisa jam 08:30 - 09:00";
         }
       } else {
-        submitBtn.className = "w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-lg transition";
+        submitBtn.className =
+          "w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-lg transition flex items-center justify-center space-x-2";
+
         if (totalMenit >= keluarMulai && totalMenit <= keluarAkhir) {
           submitBtn.disabled = false;
-          submitBtn.textContent = "Absen Keluar";
+          document.getElementById("btnText").textContent = "Absen Keluar";
+          document.getElementById("btnIcon").src = "./img/checkout.png";
           infoJam.textContent = "Absensi Pulang dibuka";
         } else {
           submitBtn.disabled = true;
-          submitBtn.textContent = "Absen Keluar";
-          infoJam.textContent = "Hanya bisa jam 17:00 - 23:00";
+          infoJam.textContent = "Hanya bisa jam 16:00 - 17:00";
         }
       }
     }
@@ -423,6 +475,7 @@
       if (absensiHistory.length > 0 && !absensiHistory[0].jam_keluar) type = "Keluar";
 
       if (navigator.geolocation) {
+        showLoader("Mengirim absensi...");
         navigator.geolocation.getCurrentPosition(async (pos) => {
           const lokasi = `${pos.coords.latitude},${pos.coords.longitude}`;
           try {
@@ -446,7 +499,11 @@
           } catch {
             alert("Terjadi kesalahan koneksi!");
           }
-        }, () => alert("❌ Tidak bisa ambil lokasi. Pastikan GPS aktif!"));
+          hideLoader();
+        }, () => {
+          hideLoader();
+          alert("❌ Tidak bisa ambil lokasi. Pastikan GPS aktif!");
+        });
       } else {
         alert("❌ Browser tidak mendukung GPS!");
       }
@@ -455,42 +512,23 @@
     // JAM (Local)
     function updateDateTimeLocal() {
       const now = new Date();
-
-      // Ambil hari
       const hari = now.toLocaleDateString("id-ID", { weekday: "long" });
-
-      // Ambil tanggal lengkap (tanpa hari)
       const tanggal = now.toLocaleDateString("id-ID", {
-        year: "numeric",
-        month: "long",
-        day: "numeric"
+        year: "numeric", month: "long", day: "numeric"
       });
-
-      // Jam digital
       const jam = now.toLocaleTimeString("id-ID", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit"
+        hour: "2-digit", minute: "2-digit", second: "2-digit"
       });
 
-      // Update ke HTML
       document.getElementById("hari").textContent = hari;
       document.getElementById("tanggal").textContent = tanggal;
       document.getElementById("jam").textContent = jam;
-
-      // Kalau kamu masih pakai ini untuk navbar/header
       document.getElementById("clock").textContent = jam;
       document.getElementById("dateToday").textContent = `${hari}, ${tanggal}`;
-
-      // Hidden input untuk form
       document.getElementById("time").value = jam;
     }
-
-    // Update setiap detik
     setInterval(updateDateTimeLocal, 1000);
     updateDateTimeLocal();
-
   </script>
 </body>
-
 </html>
